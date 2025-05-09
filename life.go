@@ -2,6 +2,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math"
@@ -14,19 +15,28 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
-const (
-	SCREEN_WIDTH  = 1000 // 10 000 px windows often fail on modern drivers
-	SCREEN_HEIGHT = 1000
-	SIZE          = 100 // voxel grid edge length
-)
-
 var (
 	window                 *glfw.Window
 	X_AXIS, Y_AXIS, Z_AXIS float32
 	DIRECTION              int
-	universe               [SIZE][SIZE][SIZE]uint8
+	universe               [][][]int
 	mu                     sync.Mutex
+	SCREEN_WIDTH           int // 10 000 px windows often fail on modern drivers
+	SCREEN_HEIGHT          int
+	SIZE                   int // voxel grid edge length
 )
+
+func create_universe_array(size int) [][][]int {
+	new := make([][][]int, size) // allocate outer slice
+
+	for i := 0; i < size; i++ { // use the parameter, not the global
+		new[i] = make([][]int, size)
+		for j := 0; j < size; j++ {
+			new[i][j] = make([]int, size)
+		}
+	}
+	return new
+}
 
 func fatalIf(err error) {
 	if err != nil {
@@ -125,11 +135,11 @@ func handleKeyPress(key glfw.Key) {
 // --- simulation -------------------------------------------------------------
 
 func createUniverse() {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for x := 0; x < SIZE; x++ {
 		for y := 0; y < SIZE; y++ {
 			for z := 0; z < SIZE; z++ {
-				universe[x][y][z] = uint8(rand.Intn(2))
+				universe[x][y][z] = int(r.Intn(2))
 			}
 		}
 	}
@@ -158,7 +168,7 @@ func bruteNeighbors(i, j, k int) int {
 func simulate() {
 	temp := universe
 	for {
-		var next [SIZE][SIZE][SIZE]uint8
+		next := create_universe_array(SIZE)
 		for x := 0; x < SIZE; x++ {
 			for y := 0; y < SIZE; y++ {
 				for z := 0; z < SIZE; z++ {
@@ -194,6 +204,14 @@ func initGL() {
 }
 
 func main() {
+	SIZE_PTR := flag.Int("size", 200, "an int")
+	SCREEN_WIDTH_PTR := flag.Int("width", 1000, "an int")
+	SCREEN_HEIGHT_PTR := flag.Int("height", 1000, "an int")
+	flag.Parse()
+	SIZE = *SIZE_PTR
+	SCREEN_WIDTH = *SCREEN_WIDTH_PTR
+	SCREEN_HEIGHT = *SCREEN_HEIGHT_PTR
+	universe = create_universe_array(SIZE)
 	// OpenGL expects a single OS thread
 	runtime.LockOSThread()
 
