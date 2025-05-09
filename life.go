@@ -24,6 +24,8 @@ var (
 	SCREEN_WIDTH           int // 10 000 px windows often fail on modern drivers
 	SCREEN_HEIGHT          int
 	SIZE                   int // voxel grid edge length
+	LIVING_VALUE           int
+	DEAD_VALUE             int
 )
 
 func create_universe_array(size int) [][][]int {
@@ -174,9 +176,9 @@ func simulate() {
 				for z := 0; z < SIZE; z++ {
 					cell := temp[x][y][z]
 					n := bruteNeighbors(x, y, z)
-					if cell == 1 && (n < 4 || n > 5) {
+					if cell == 1 && (n < LIVING_VALUE || n > DEAD_VALUE) {
 						next[x][y][z] = 0
-					} else if cell == 0 && (n == 4 || n == 5) {
+					} else if cell == 0 && (n == LIVING_VALUE || n == DEAD_VALUE) {
 						next[x][y][z] = 1
 					} else {
 						next[x][y][z] = cell
@@ -207,10 +209,15 @@ func main() {
 	SIZE_PTR := flag.Int("size", 200, "an int")
 	SCREEN_WIDTH_PTR := flag.Int("width", 1000, "an int")
 	SCREEN_HEIGHT_PTR := flag.Int("height", 1000, "an int")
+	LIVING_VALUE_PTR := flag.Int("living", 4, "an int")
+	DEAD_VALUE_PTR := flag.Int("dead", 5, "an int")
+
 	flag.Parse()
 	SIZE = *SIZE_PTR
 	SCREEN_WIDTH = *SCREEN_WIDTH_PTR
 	SCREEN_HEIGHT = *SCREEN_HEIGHT_PTR
+	LIVING_VALUE = *LIVING_VALUE_PTR
+	DEAD_VALUE = *DEAD_VALUE_PTR
 	universe = create_universe_array(SIZE)
 	// OpenGL expects a single OS thread
 	runtime.LockOSThread()
