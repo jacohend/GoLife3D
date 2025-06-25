@@ -205,7 +205,9 @@ func initGL() {
 	gl.Hint(gl.PERSPECTIVE_CORRECTION_HINT, gl.NICEST)
 }
 
-func main() {
+func setup() {
+	numCPUs := runtime.NumCPU()
+	runtime.GOMAXPROCS(numCPUs)
 	SIZE_PTR := flag.Int("size", 200, "an int")
 	SCREEN_WIDTH_PTR := flag.Int("width", 1000, "an int")
 	SCREEN_HEIGHT_PTR := flag.Int("height", 1000, "an int")
@@ -219,6 +221,11 @@ func main() {
 	LIVING_VALUE = *LIVING_VALUE_PTR
 	DEAD_VALUE = *DEAD_VALUE_PTR
 	universe = create_universe_array(SIZE)
+}
+
+func main() {
+	setup()
+
 	// OpenGL expects a single OS thread
 	runtime.LockOSThread()
 
@@ -253,9 +260,11 @@ func main() {
 	createUniverse()
 	go simulate()
 
-	for !window.ShouldClose() {
-		drawGLScene()
-		window.SwapBuffers()
-		glfw.PollEvents()
-	}
+	func() {
+		for !window.ShouldClose() {
+			drawGLScene()
+			window.SwapBuffers()
+			glfw.PollEvents()
+		}
+	}()
 }
